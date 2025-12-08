@@ -29,11 +29,11 @@
     "@tailwindcss/vite": "^4.1.11",
     "@tanstack/react-query": "^5.81.5",
     "@tavily/core": "^0.5.9",
-    "@types/node": "^24.0.10",
     "@types/prompts": "^2.4.9",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "ai": "5.0.106",
+    "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.4",
     "evalite": "1.0.0-beta.15",
     "hono": "^4.8.4",
@@ -56,11 +56,13 @@
     "zod": "^4.0.8"
   },
   "devDependencies": {
+    "@types/node": "^24.0.10",
     "@types/papaparse": "^5.3.16",
     "ai-hero-cli": "^0.2.10",
     "husky": "^9.1.7",
     "prettier": "^3.6.2",
-    "tsx": "^4.20.3"
+    "ts-node": "^10.9.2",
+    "tsx": "^4.7.1"
   },
   "prettier": {
     "semi": true,

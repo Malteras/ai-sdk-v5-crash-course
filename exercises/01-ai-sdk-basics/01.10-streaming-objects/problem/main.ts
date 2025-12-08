@@ -1,5 +1,6 @@
 import { google } from '@ai-sdk/google';
-import { streamText } from 'ai';
+import { streamObject, streamText } from 'ai';
+import z from 'zod';
 
 const model = google('gemini-2.0-flash');
 
@@ -21,7 +22,23 @@ const finalText = await stream.text;
 //   passing in the finalText as the story
 // - The schema, which should be an object with a facts property
 //   that is an array of strings
-const factsResult = TODO;
+const factsResult = await streamObject({
+  model,
+  prompt: `Provide five interesting facts about the following imaginary planet:\n\n${finalText}`,
+  schema: z.object({
+    facts: z
+      .array(
+        z
+          .string()
+          .describe(
+            'An interesting fact about the imaginary planet. Write as scientist.',
+          ),
+      )
+      .describe(
+        'An array of interesting facts about the imaginary planet',
+      ),
+  }),
+});
 
 for await (const chunk of factsResult.partialObjectStream) {
   console.log(chunk);

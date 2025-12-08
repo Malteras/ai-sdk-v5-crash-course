@@ -1,7 +1,13 @@
-import { google } from '@ai-sdk/google';
+import { createAnthropic } from '@ai-sdk/anthropic';
 import { generateText } from 'ai';
+import { geminiModel } from '../../../../test-api.ts';
 
-const model = google('gemini-2.0-flash-lite');
+const anthropic = createAnthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY, // ← Just change to this!
+});
+
+// const model = anthropic('claude-3-haiku-20240307');
+const model = geminiModel;
 
 const prompt = 'What is the capital of France?';
 

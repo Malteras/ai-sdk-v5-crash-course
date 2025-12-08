@@ -35,7 +35,10 @@ const App = () => {
             e.target as HTMLFormElement,
           );
           const file = formData.get('file') as File;
-
+          if (file) {
+            const dataUrl = await fileToDataURL(file);
+            formData.set('file', dataUrl);
+          }
           // TODO: figure out how to pass the file
           // _as well as the text_ to the
           // /api/chat route!
@@ -45,8 +48,17 @@ const App = () => {
           // convert the file to a data URL. This
           // will be useful!
           sendMessage({
-            // NOTE: 'parts' will be useful
-            text: input,
+            parts: [
+              {
+                type: 'text',
+                text: input,
+              },
+              {
+                type: 'file',
+                mediaType: file.type,
+                url: await fileToDataURL(file),
+              },
+            ],
           });
 
           setInput('');

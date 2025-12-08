@@ -1,12 +1,13 @@
-import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
+import { anthropicModel } from '../../../../test-api.ts';
 
-// TODO: Choose a model. I recommend using the Google Gemini model:
-// gemini-2.0-flash-lite
-const model = TODO;
+const model = anthropicModel;
 
 const prompt = 'What is the capital of France?';
 
-const result = TODO; // TODO: Use generateText to get the result
+const result = await generateText({
+  model,
+  prompt,
+});
 
 console.log(result.text);
