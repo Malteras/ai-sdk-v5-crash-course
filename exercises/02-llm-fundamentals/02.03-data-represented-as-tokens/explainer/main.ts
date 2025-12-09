@@ -34,11 +34,17 @@ const asXML = DATA.map(
     `<item url="${item.url}" title="${item.title}"></item>`,
 ).join('\n');
 
-const asJSON = JSON.stringify(DATA, null, 2);
+const asJSON = JSON.stringify(DATA);
 
-const asMarkdown = DATA.map(
-  (item) => `- [${item.title}](${item.url})`,
-).join('\n');
+const asMarkdown = `# My Links Collection
+
+Here are my favorite links:
+
+${DATA.map(
+  (item) => `## ${item.title}
+
+Visit: [${item.title}](${item.url})`,
+).join('\n\n')}`;
 
 console.log('Markdown tokens:', tokenize(asMarkdown).length);
 console.log(asMarkdown);
