@@ -1,4 +1,4 @@
-# AI SDK v5 Crash Course
+# AI SDK v5 Crash Course - MCP IS ALIIIIVE
 
 <img src="https://res.cloudinary.com/total-typescript/image/upload/v1758027897/ai-sdk-v5-crash-course-github-thumbnail_2x.jpg" alt="AI SDK 5 Crash Course" />
 
