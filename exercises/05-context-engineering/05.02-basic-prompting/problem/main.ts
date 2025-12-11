@@ -21,18 +21,17 @@ const result = await streamText({
     <examples>
         You can find some ideas on this [This is an external link to databox.com](link https://databox.com/blog-title-examples).
     </examples>
+    <conversation-history>
+        ${INPUT}
+    </conversation-history>
     <the-ask>
-        Here is user input:
-        <question>
-            ${INPUT}
-        </question>
         Your goal is to generate A SINGLE TITLE FOR TOPIC - ${INPUT}.
     </the-ask>
     <rules>
         Do not write anything else except the title.
     </rules>
     <output-formatting>
-       **Title**
+      Only title.
     </output-formatting
   `,
 });

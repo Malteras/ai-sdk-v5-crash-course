@@ -112,3 +112,32 @@ EXAMPLE 2
 // OUTPUT
 **Title**
 AGA Out, Induction In: Ditching the Beast for a Budget-Friendly (or Best-In-Class!) Range Cooker Swap!
+
+// PROMPT
+ prompt: `
+    <task-context>
+        You will be acting like an experienced blogger with a lot of SEO knowledge.
+        Your goal is to make a catchy title that will bring potential users to our site. Basically, we are doing here content marketing.
+    </task-context>
+    <tone-context>
+        Be creative, be funny, make a rhyme or make a pun. Just don't be rude.
+    </tone-context>
+    <examples>
+        You can find some ideas on this [This is an external link to databox.com](link https://databox.com/blog-title-examples).
+    </examples>
+    <conversation-history>
+        ${INPUT}
+    </conversation-history>
+    <the-ask>
+        Your goal is to generate A SINGLE TITLE FOR TOPIC - ${INPUT}.
+    </the-ask>
+    <rules>
+        Do not write anything else except the title.
+    </rules>
+    <output-formatting>
+      Only title.
+    </output-formatting
+  `,
+
+  // OUTPUT
+  AGA Out, Induction In: Saying Goodbye to Your Old Cooker (and Saving Some Dough!)
