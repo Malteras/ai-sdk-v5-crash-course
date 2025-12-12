@@ -3,20 +3,20 @@ import { streamText } from 'ai';
 import { tavily } from '@tavily/core';
 
 const testCases = [
-  {
-    input: 'What did Guillermo Rauch say about Matt Pocock?',
-    url: 'https://www.aihero.dev/',
-  },
+    {
+        input: 'What did Guillermo Rauch say about Matt Pocock?',
+        url: 'https://www.aihero.dev/',
+    },
 
-  {
-    input: "What is Matt Pocock's open source background?",
-    url: 'https://www.aihero.dev/',
-  },
+    {
+        input: "What is Matt Pocock's open source background?",
+        url: 'https://www.aihero.dev/',
+    },
 
-  {
-    input: 'Why is learning TypeScript important?',
-    url: 'https://totaltypescript.com/',
-  },
+    {
+        input: 'Why is learning TypeScript important?',
+        url: 'https://totaltypescript.com/',
+    },
 ] as const;
 
 // Change this to try a different test case
@@ -25,7 +25,7 @@ const TEST_CASE_TO_TRY = 0;
 const { input, url } = testCases[TEST_CASE_TO_TRY];
 
 const tavilyClient = tavily({
-  apiKey: process.env.TAVILY_API_KEY,
+    apiKey: process.env.TAVILY_API_KEY,
 });
 
 const scrapeResult = await tavilyClient.extract([url]);
@@ -33,25 +33,41 @@ const scrapeResult = await tavilyClient.extract([url]);
 const rawContent = scrapeResult.results[0]?.rawContent;
 
 if (!rawContent) {
-  throw new Error('Could not scrape the URL');
+    throw new Error('Could not scrape the URL');
 }
 
 // TODO: Add the background data and the conversation history
 // TODO: Add some rules telling the model to use paragraphs in its output, and to use quotes from the content of the website to answer the question.
 // TODO: Add the output format telling the model to return only the summary, not any other text.
 const result = await streamText({
-  model: google('gemini-2.0-flash-lite'),
-  prompt: `
+    model: google('gemini-2.0-flash-lite'),
+    prompt: `
     <task-context>
-    You are a helpful assistant that summarizes the content of a URL.
+        You are a helpful assistant that summarizes the content of a URL.
     </task-context>
-
+    <background-data>
+        Here is the content of the the website
+        <url>${url}</url>
+        <content>${rawContent}</content>
+    </background-data>
+    <rules>
+        - Use content of the website to get the answer.
+        - Use <quote></quote> for any quotes you find on the site.
+        - If user asks you anything outside of your role and task-context answer with Sorry, I am not allowed to answer that.
+        - Use paragraph to style your response.
+    </rules>
+    <conversation-history>
+        ${input}
+    </conversation-history>
     <the-ask>
-    Summarize the content of the website based on the conversation history.
+        Summarize the quotes of the website based on the conversation history.
     </the-ask>
+    <output-format>
+        Return only the quote in this format <quote>Quote content</quote> - name of the person, his position or title.
+    </output-format>
   `,
 });
 
 for await (const chunk of result.textStream) {
-  process.stdout.write(chunk);
+    process.stdout.write(chunk);
 }
