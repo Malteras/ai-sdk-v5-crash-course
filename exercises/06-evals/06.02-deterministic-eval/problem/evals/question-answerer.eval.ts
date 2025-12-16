@@ -59,6 +59,11 @@ evalite('TS Release Notes', {
         <question>
         ${input}
         </question>
+        <links>
+        ${links.map((link) => `<link>${link.title}: ${link.url}</link>`).join('\n')}
+        </links>
+        Provide a detailed answer using the links above. Format any links in Markdown format like [title](url).
+        Always include links in your answer. Keep your answer under 500 characters.
       `,
         });
 
@@ -77,7 +82,7 @@ evalite('TS Release Notes', {
         {
             name: 'Output length',
             scorer: ({ input, output, expected }) => {
-                // TODO: check if the output is less than 500 characters
+                return output.length < 500 ? 1 : 0;
             },
         },
     ],
