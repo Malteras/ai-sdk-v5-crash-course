@@ -6,63 +6,62 @@ import path from 'path';
 import { attributionToChainOfThoughtPaper } from './attribution-eval.ts';
 
 const chainOfThoughtPaper = readFileSync(
-  path.join(
-    import.meta.dirname,
-    'chain-of-thought-prompting.pdf',
-  ),
+    path.join(
+        import.meta.dirname,
+        'chain-of-thought-prompting.pdf',
+    ),
 );
 
 evalite('Chain Of Thought Paper', {
-  data: () => [
-    {
-      input: 'What is chain of thought prompting?',
-    },
-    {
-      input:
-        'Why do the authors of the paper think that chain of thought prompting produces improvements?',
-    },
-  ],
-  task: async (input) => {
-    const result = await generateText({
-      model: google('gemini-2.0-flash'),
-      system: `
-        You are a helpful assistant that can answer questions about the chain of thought prompting paper.
-      `,
-      messages: [
+    data: () => [
         {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `
-              <question>
-              ${input}
-              </question>
-
-              ALWAYS use quotes from the paper when answering the question.
-              `,
-            },
-            {
-              type: 'file',
-              data: chainOfThoughtPaper,
-              mediaType: 'application/pdf',
-            },
-          ],
+            input: 'What is chain of thought prompting?',
         },
-      ],
-    });
+        {
+            input: 'Why do the authors of the paper think that chain of thought prompting produces improvements?',
+        },
+    ],
+    task: async (input) => {
+        const result = await generateText({
+            model: google('gemini-2.0-flash'),
+            system: `
+                You are a helpful assistant that can answer questions about the chain of thought prompting paper.
+            `,
+            messages: [
+                {
+                    role: 'user',
+                    content: [
+                        {
+                            type: 'text',
+                            text: `
+                                <question>
+                                    ${input}
+                                </question>
 
-    return result.text;
-  },
-  scorers: [
-    {
-      name: 'Includes Quotes',
-      scorer: ({ input, output, expected }) => {
-        const quotesFound = output.includes('"');
+                                ALWAYS use quotes from the paper when answering the question.
+                            `,
+                        },
+                        {
+                            type: 'file',
+                            data: chainOfThoughtPaper,
+                            mediaType: 'application/pdf',
+                        },
+                    ],
+                },
+            ],
+        });
 
-        return quotesFound ? 1 : 0;
-      },
+        return result.text;
     },
-    attributionToChainOfThoughtPaper,
-  ],
+    scorers: [
+        {
+            name: 'Includes Quotes',
+            scorer: ({ input, output, expected }) => {
+                const quotesFound = output.includes('"');
+
+                return quotesFound ? 1 : 0;
+            },
+        },
+        attributionToChainOfThoughtPaper,
+    ],
 });

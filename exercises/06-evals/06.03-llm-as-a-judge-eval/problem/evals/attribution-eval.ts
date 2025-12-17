@@ -6,10 +6,10 @@ import path from 'path';
 import z from 'zod';
 
 const chainOfThoughtPaper = readFileSync(
-  path.join(
-    import.meta.dirname,
-    'chain-of-thought-prompting.pdf',
-  ),
+    path.join(
+        import.meta.dirname,
+        'chain-of-thought-prompting.pdf',
+    ),
 );
 
 const ATTRIBUTION_PROMPT = `
@@ -26,34 +26,60 @@ D: The answer does not provide sources from the paper.
 `;
 
 export const attributionToChainOfThoughtPaper = createScorer<
-  string,
-  string
+    string,
+    string,
+    unknown
 >({
-  name: 'Attribution',
-  scorer: async ({ input, output }) => {
-    const result = await generateObject({
-      model: google('gemini-2.0-flash'),
-      system: ATTRIBUTION_PROMPT,
-      messages: TODO, // TODO: Pass the chain of thought paper, the question and the answer given
-      schema: TODO, // TODO: Define the schema for the response
-    });
+    name: 'Attribution',
+    scorer: async ({ input, output }) => {
+        const result = await generateObject({
+            model: google('gemini-2.0-flash'),
+            system: ATTRIBUTION_PROMPT,
+            messages: [
+                {
+                    role: 'user',
+                    content: [
+                        {
+                            type: 'text',
+                            text: `
+                                <paper>
+                                    ${chainOfThoughtPaper}
+                                </paper>
 
-    // NOTE: it's important to use a string-based score for the
-    // LLM, since LLM's are notorious for being biased towards
-    // different numbers.
+                                <question>
+                                    ${input}
+                                </question>
 
-    // So, we get the LLM to return a string score, and then
-    // we map it to a number.
-    const scoreMap = {
-      A: 1,
-      B: 0.5,
-      C: 0,
-      D: 0,
-    };
+                                <answer>
+                                    ${output}
+                                </answer>
+                            `,
+                        },
+                    ],
+                },
+            ],
+            schema: z.object({
+                score: z.enum(['A', 'B', 'C', 'D']),
+                feedback: z.string().optional(),
+            }),
+        });
 
-    return {
-      score: scoreMap[result.object.score],
-      metadata: result.object.feedback,
-    };
-  },
+        // NOTE: it's important to use a string-based score for the
+        // LLM, since LLM's are notorious for being biased towards
+        // different numbers.
+
+        // So, we get the LLM to return a string score, and then
+        // we map it to a number.
+        const scoreMap = {
+            A: 1,
+            B: 0.5,
+            C: 0,
+            D: 0,
+        };
+
+        return {
+            score: scoreMap[result.object.score],
+            metadata: result.object.feedback,
+        };
+    },
 });
