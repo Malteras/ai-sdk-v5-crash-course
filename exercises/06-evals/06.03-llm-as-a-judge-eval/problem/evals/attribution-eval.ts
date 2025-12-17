@@ -55,12 +55,21 @@ export const attributionToChainOfThoughtPaper = createScorer<
                                 </answer>
                             `,
                         },
+                        {
+                            type: 'file',
+                            data: chainOfThoughtPaper,
+                            mediaType: 'application/pdf',
+                        },
                     ],
                 },
             ],
             schema: z.object({
                 score: z.enum(['A', 'B', 'C', 'D']),
-                feedback: z.string().optional(),
+                feedback: z
+                    .string()
+                    .describe(
+                        'A short feedback message about the answer.',
+                    ),
             }),
         });
 
