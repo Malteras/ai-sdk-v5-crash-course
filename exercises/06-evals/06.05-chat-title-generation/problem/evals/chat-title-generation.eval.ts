@@ -6,39 +6,47 @@ import Papa from 'papaparse';
 import path from 'path';
 
 const csvFile = readFileSync(
-  path.join(import.meta.dirname, '../../titles-dataset.csv'),
-  'utf-8',
+    path.join(import.meta.dirname, '../../titles-dataset.csv'),
+    'utf-8',
 );
 
 const data = Papa.parse<{ Input: string; Output: string }>(
-  csvFile,
-  {
-    header: true,
-    skipEmptyLines: true,
-  },
+    csvFile,
+    {
+        header: true,
+        skipEmptyLines: true,
+    },
 );
 
 const EVAL_DATA_SIZE = 5;
 
 const dataForEvalite = data.data
-  .slice(0, EVAL_DATA_SIZE)
-  .map((row) => ({
-    input: row.Input,
-    expected: row.Output,
-  }));
+    .slice(0, EVAL_DATA_SIZE)
+    .map((row) => ({
+        input: row.Input,
+        expected: row.Output,
+    }));
 
 evalite('Chat Title Generation', {
-  data: () => dataForEvalite,
-  task: async (input) => {
-    const result = await generateText({
-      model: google('gemini-2.0-flash-lite'),
-      prompt: `
-        Generate me a title:
+    data: () => dataForEvalite,
+    task: async (input) => {
+        const result = await generateText({
+            model: google('gemini-2.0-flash-lite'),
+            prompt: `
+        <task-content>
+            You are a helpful assistant that can generate titles for conversations.
+        </task-content>
+        <rules>
+            - The title should be concise and accurately reflect the content of the conversation.
+            - The title should be engaging and interesting to potential readers.
+            - Avoid using generic titles like "Chat" or "Conversation".
+            - Use proper capitalization and punctuation.
+        </rules>
         ${input}
       `,
-    });
+        });
 
-    return result.text;
-  },
-  scorers: [],
+        return result.text;
+    },
+    scorers: [],
 });
