@@ -1,4 +1,4 @@
-import { QUIZ_CATEGORIES } from './quiz-categories.js';
+import { QUIZ_CATEGORIES } from '../schemas/quiz-categories.js';
 
 export interface CategoryValidationResult {
     valid: boolean;

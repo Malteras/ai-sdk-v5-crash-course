@@ -1,4 +1,5 @@
-import { QUIZ_CATEGORIES } from './quiz-categories.js';
+import { QUIZ_CATEGORIES } from '../schemas/quiz-categories.js';
+import { formatExemplarQuestions } from './exemplar-questions.js';
 
 export const questionMakerPromptTemplate = (opts: {
     numberOfQuestions: number;
@@ -56,17 +57,8 @@ Here are important rules for crafting quiz questions:
 <exemplar-questions>
 Use these examples as your gold standard for phrasing, representing different categories from ${JSON.stringify(Object.keys(QUIZ_CATEGORIES))}:
 
-1. [Culture - Fine art] "From the Greek meaning 'arrangement of skin', what name is given to the art of preserving an animal's body in a lifelike state by stuffing it?"
-2. [History - History] "The 'Hallstein Doctrine' (1955-1969) was a foreign policy principle of West Germany, declaring it an 'unfriendly act' if third countries established diplomatic relations with which other country?"
-3. [Sport & Games - Sports] "Which carbohydrate precedes the names of the boxers Ray Leonard and Ray Robinson and the UFC fighter Rashad Evans?"
-4. [Entertainment - Television] "Which French TV series starring Omar Sy, inspired by the stories of writer Maurice Leblanc, shares its name from a character in the Harry Potter universe?"
-5. [Culture - Mythology] "Which beautiful youth in Greek mythology fell in love with his own reflection, giving his name to a psychological term for excessive self-love?"
-6. [Media - Literature] "Which word appears in the titles of books by Thomas Mann, Agatha Christie, Leo Tolstoy, and Arthur Miller?"
-7. [History - Current Affairs] "Which former Prime Minister of New Zealand published her memoir 'A Different Kind of Power' in 2025?"
-8. [Sciences - Fauna] "The 'Chupacabra' was first reportedly sighted in 1995. According to its Spanish name, which animals does this 'vampiric' creature particularly target?"
-9. [History - Exploration] "Butch Cassidy and the Sundance Kid in 1908 and Che Guevara in 1967 were all shot dead in which South American country?"
-10. [Culture - Architecture] "Which Italian architect, who shares his surname with a musical instrument, worked with Richard Rodgers on the Pompidou Centre in Paris?"
-    </exemplar-questions>
+${formatExemplarQuestions()}
+</exemplar-questions>
 
 <user-input>
 ${opts.topic ? `The topic for the questions is: ${opts.topic}` : 'No specific topic provided - distribute questions across the categories listed above.'}

@@ -1,10 +1,26 @@
 import { google } from '@ai-sdk/google';
 import { evalite } from 'evalite';
 import { generateQuestions } from './generate-questions.js';
-import { evaluateQuestion } from './question-quality-eval.js';
+import { evaluateQuestion } from './evaluators/question-quality-eval.js';
 
 const generatorModel = google('gemini-2.5-pro');
 const evaluatorModel = google('gemini-2.5-pro');
+
+// Store evaluation results
+let evaliteResults: {
+    questions: Array<{
+        question: string;
+        answer: string;
+        categoryTag?: string;
+        evaluation?: any;
+    }>;
+    metrics: {
+        averageScore: number;
+        passRate: number;
+        passCount: number;
+        totalQuestions: number;
+    };
+} | null = null;
 
 // Generate questions beforehand
 console.log('🎯 Generating questions...\n');
@@ -26,7 +42,9 @@ evalite('Quiz Question Generation', {
     ],
     task: async (input) => {
         console.log(`\n${'='.repeat(80)}`);
-        console.log(`📝 Evaluating questions on topic: "${input.topic}"\n`);
+        console.log(
+            `📝 Evaluating questions on topic: "${input.topic}"\n`,
+        );
         console.log(input.rawQuestions);
         console.log(`\n${'='.repeat(80)}\n`);
 
@@ -127,6 +145,39 @@ evalite('Quiz Question Generation', {
                     .filter(Boolean)
                     .join('\n');
 
+                // Store results in evaliteResults variable
+                evaliteResults = {
+                    questions: output.questions.map((q, i) => ({
+                        ...q,
+                        evaluation: evaluations[i],
+                    })),
+                    metrics: {
+                        averageScore,
+                        passRate,
+                        passCount,
+                        totalQuestions: evaluations.length,
+                    },
+                };
+
+                // Log the stored results immediately
+                console.log('\n\n' + '='.repeat(80));
+                console.log('📦 STORED EVALUATION RESULTS');
+                console.log('='.repeat(80) + '\n');
+
+                evaliteResults.questions.forEach((question, index) => {
+                    if (!question) return;
+
+                    console.log(`\n${index + 1}. ${question.question}`);
+                    console.log(`   Answer: ${question.answer}`);
+                    console.log(`   Grade: ${question.evaluation?.score}`);
+                    console.log(`   Feedback: ${question.evaluation?.feedback}`);
+                    if (question.evaluation?.suggestedQuestion) {
+                        console.log(`   💡 Suggested: ${question.evaluation.suggestedQuestion}`);
+                    }
+                });
+
+                console.log('\n' + '='.repeat(80) + '\n');
+
                 return {
                     score: averageScore,
                     message: `Pass Rate: ${(passRate * 100).toFixed(1)}% (${passCount}/${evaluations.length})\n${failingFeedback || 'All questions passed!'}`,
@@ -136,7 +187,8 @@ evalite('Quiz Question Generation', {
         {
             name: 'Parsing Success',
             scorer: ({ output }) => {
-                const actualCount = output.questions?.length || 0;
+                const actualCount =
+                    output.questions?.length || 0;
                 const expectedCount = 3; // We generated 3 questions
 
                 return {
@@ -148,9 +200,7 @@ evalite('Quiz Question Generation', {
     ],
 });
 
-function parseQuestions(
-    text: string,
-): Array<{
+function parseQuestions(text: string): Array<{
     question: string;
     answer: string;
     categoryTag?: string;
@@ -237,3 +287,18 @@ function parseQuestions(
 
     return questions;
 }
+
+// Note: evaliteResults will be populated after the test runs
+// You can access it programmatically or export it to a file
+
+// Example: Log results summary (will execute after scorer runs)
+process.on('beforeExit', () => {
+    if (evaliteResults) {
+        console.log('\n\n' + '='.repeat(80));
+        console.log('📦 EVALITE RESULTS SUMMARY');
+        console.log('='.repeat(80));
+        console.log('\n📊 Metrics:', JSON.stringify(evaliteResults.metrics, null, 2));
+        console.log('\n✅ evaliteResults variable contains all evaluation data');
+        console.log('='.repeat(80) + '\n');
+    }
+});
