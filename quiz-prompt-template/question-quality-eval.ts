@@ -18,10 +18,12 @@ Evaluate each question based on these critical rules:
    Examples of ACCEPTABLE:
    - "From the Latin for 'of three men', the term denotes a regime of three leaders. Which specific alliance of 60 BCE involved Caesar, Pompey, and Crassus?" Answer: First Triumvirate
    - "From the Greek word meaning 'rule by the people', what system of government originated in ancient Athens?" Answer: Democracy
+   - "From the Latin for 'to lift up', what is the term for the phase transition of a substance directly from a solid to a gas?" Answer: Sublimation
 
    Examples of VIOLATION:
    - "From the Latin 'salarium' meaning salt money, what word means a fixed payment?" Answer: Salary (too similar to the Latin term)
    - "Named Vesta, which Roman goddess..." Answer: Vesta (exact match - the answer is literally stated in the question)
+   - "From the Latin 'sublimare' meaning to lift up, what is the term for the phase transition from solid to gas?" Answer: Sublimation (Latin term too similar to the answer)
 
 3. **Context Relevance**: Any contextual lead-ins (historical, etymological, pop-culture) must be accurate and genuinely relevant to the answer
 
@@ -39,12 +41,15 @@ C: Poor - Contains factual errors, false connections, or reveals the SPECIFIC an
 D: Failed - Multiple serious issues: factual errors AND answer revealed AND/or false information
 
 Provide specific feedback about what's wrong or what's done well.
+
+IMPORTANT: If the score is C or D, you MUST provide a corrected version of the question that fixes the identified issues.
 `;
 
 export interface QuestionEvaluation {
     score: 'A' | 'B' | 'C' | 'D';
     numericScore: number;
     feedback: string;
+    suggestedQuestion?: string;
 }
 
 export async function evaluateQuestion(
@@ -73,6 +78,12 @@ export async function evaluateQuestion(
                 .describe(
                     'Detailed feedback about the question quality, including specific issues found.',
                 ),
+            suggestedQuestion: z
+                .string()
+                .optional()
+                .describe(
+                    'If score is C or D, provide a corrected version of the question that fixes all identified issues while maintaining the same answer.',
+                ),
         }),
     });
 
@@ -88,6 +99,7 @@ export async function evaluateQuestion(
         score: result.object.score,
         numericScore: scoreMap[result.object.score],
         feedback: result.object.feedback,
+        suggestedQuestion: result.object.suggestedQuestion,
     };
 }
 
