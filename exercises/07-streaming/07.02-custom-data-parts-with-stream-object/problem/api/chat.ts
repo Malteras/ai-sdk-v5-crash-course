@@ -1,86 +1,89 @@
 import { google } from '@ai-sdk/google';
 import {
-  convertToModelMessages,
-  createUIMessageStream,
-  createUIMessageStreamResponse,
-  streamText,
-  type ModelMessage,
-  type UIMessage,
+    convertToModelMessages,
+    createUIMessageStream,
+    createUIMessageStreamResponse,
+    streamObject,
+    streamText,
+    type ModelMessage,
+    type UIMessage,
 } from 'ai';
+import z from 'zod';
 
 export type MyMessage = UIMessage<
-  never,
-  {
-    // TODO: Change the type to 'suggestions' and
-    // make it an array of strings
-    suggestion: string;
-  }
+    never,
+    {
+        // TODO: Change the type to 'suggestions' and
+        // make it an array of strings
+        suggestions: string[];
+    }
 >;
 
 export const POST = async (req: Request): Promise<Response> => {
-  const body = await req.json();
+    const body = await req.json();
 
-  const messages: UIMessage[] = body.messages;
+    const messages: UIMessage[] = body.messages;
 
-  const modelMessages: ModelMessage[] =
-    convertToModelMessages(messages);
+    const modelMessages: ModelMessage[] =
+        convertToModelMessages(messages);
 
-  const stream = createUIMessageStream<MyMessage>({
-    execute: async ({ writer }) => {
-      const streamTextResult = streamText({
-        model: google('gemini-2.0-flash'),
-        messages: modelMessages,
-      });
+    const stream = createUIMessageStream<MyMessage>({
+        execute: async ({ writer }) => {
+            const streamTextResult = streamText({
+                model: google('gemini-2.0-flash'),
+                messages: modelMessages,
+            });
 
-      writer.merge(streamTextResult.toUIMessageStream());
+            writer.merge(streamTextResult.toUIMessageStream());
 
-      await streamTextResult.consumeStream();
+            await streamTextResult.consumeStream();
 
-      // TODO: Change the streamText call to streamObject,
-      // since we'll need to use structured outputs to reliably
-      // generate multiple suggestions
-      const followupSuggestionsResult = streamText({
-        model: google('gemini-2.0-flash'),
-        // TODO: Define the schema for the suggestions
-        // using zod
-        schema: TODO,
-        messages: [
-          ...modelMessages,
-          {
-            role: 'assistant',
-            content: await streamTextResult.text,
-          },
-          {
-            role: 'user',
-            content:
-              // TODO: Change the prompt to tell the LLM
-              // to return an array of suggestions
-              'What question should I ask next? Return only the question text.',
-          },
-        ],
-      });
+            // TODO: Change the streamText call to streamObject,
+            // since we'll need to use structured outputs to reliably
+            // generate multiple suggestions
+            // TODO:@ognjen check this difference between streamText and streamObject
+            const followupSuggestionsResult = streamObject({
+                model: google('gemini-2.0-flash'),
+                // TODO: Define the schema for the suggestions
+                // using zod
+                schema: z
+                    .object({ suggestions: z.array(z.string()) })
+                    .describe('Suggested questions to ask next'),
+                messages: [
+                    ...modelMessages,
+                    {
+                        role: 'assistant',
+                        content: await streamTextResult.text,
+                    },
+                    {
+                        role: 'user',
+                        content:
+                            // TODO: Change the prompt to tell the LLM
+                            // to return an array of suggestions
+                            'What question should I ask next? Return the list of three suggestions.',
+                    },
+                ],
+            });
 
-      const dataPartId = crypto.randomUUID();
+            const dataPartId = crypto.randomUUID();
 
-      let fullSuggestion = '';
+            for await (const chunk of followupSuggestionsResult.partialObjectStream) {
+                // Filter out undefined suggestions as the array is being built
+                const suggestions =
+                    chunk.suggestions?.filter(
+                        (suggestion) => suggestion !== undefined,
+                    ) ?? [];
 
-      // TODO: Update this to iterate over the partialObjectStream
-      for await (const chunk of followupSuggestionsResult.textStream) {
-        fullSuggestion += chunk;
+                writer.write({
+                    id: dataPartId,
+                    type: 'data-suggestions',
+                    data: suggestions,
+                });
+            }
+        },
+    });
 
-        // TODO: Update this to write the data part
-        // with the suggestions array. You might need
-        // to filter out undefined suggestions.
-        writer.write({
-          id: dataPartId,
-          type: 'data-suggestion',
-          data: fullSuggestion,
-        });
-      }
-    },
-  });
-
-  return createUIMessageStreamResponse({
-    stream,
-  });
+    return createUIMessageStreamResponse({
+        stream,
+    });
 };

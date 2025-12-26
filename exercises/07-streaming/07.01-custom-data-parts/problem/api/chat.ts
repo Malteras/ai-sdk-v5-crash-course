@@ -63,7 +63,7 @@ export const POST = async (req: Request): Promise<Response> => {
 
                 // TODO: Call writer.write and write the data part
                 // to the stream
-                // TODO: THIS LETS THE USER WRITE WHATS IN THE STREAM
+                // TODO:@ognjen THIS LETS THE USER WRITE WHATS IN THE STREAM
                 writer.write({
                     type: 'data-suggestion',
                     id: dataPartId,
