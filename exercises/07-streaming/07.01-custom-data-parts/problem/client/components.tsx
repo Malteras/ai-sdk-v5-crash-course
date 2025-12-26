@@ -3,73 +3,73 @@ import ReactMarkdown from 'react-markdown';
 import type { MyMessage } from '../api/chat.ts';
 
 export const Wrapper = (props: {
-  children: React.ReactNode;
+    children: React.ReactNode;
 }) => {
-  return (
-    <div className="flex flex-col w-full max-w-md py-24 mx-auto stretch">
-      {props.children}
-    </div>
-  );
+    return (
+        <div className="flex flex-col w-full max-w-md py-24 mx-auto stretch">
+            {props.children}
+        </div>
+    );
 };
 
 export const Message = ({
-  role,
-  parts,
+    role,
+    parts,
 }: {
-  role: string;
-  parts: MyMessage['parts'];
+    role: string;
+    parts: MyMessage['parts'];
 }) => {
-  const prefix = role === 'user' ? 'User: ' : 'AI: ';
+    const prefix = role === 'user' ? 'User: ' : 'AI: ';
 
-  const text = parts
-    .map((part) => {
-      if (part.type === 'text') {
-        return part.text;
-      }
-      return '';
-    })
-    .join('');
-  return (
-    <div className="prose prose-invert my-6">
-      <ReactMarkdown>{prefix + text}</ReactMarkdown>
-    </div>
-  );
+    const text = parts
+        .map((part) => {
+            if (part.type === 'text') {
+                return part.text;
+            }
+            return '';
+        })
+        .join('');
+    return (
+        <div className="prose prose-invert my-6">
+            <ReactMarkdown>{prefix + text}</ReactMarkdown>
+        </div>
+    );
 };
 
 export const ChatInput = ({
-  input,
-  onChange,
-  onSubmit,
-  suggestion,
+    input,
+    onChange,
+    onSubmit,
+    suggestion,
 }: {
-  input: string;
-  onChange: (text: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
-  suggestion: string | undefined;
+    input: string;
+    onChange: (text: string) => void;
+    onSubmit: (e: React.FormEvent) => void;
+    suggestion: string | undefined;
 }) => (
-  <form
-    onSubmit={onSubmit}
-    className="fixed bottom-0 mb-8 max-w-md w-full"
-  >
-    <div className="flex flex-col gap-2 items-start">
-      {suggestion && (
-        <button
-          type="button"
-          className="text-xs text-gray-400 text-left bg-gray-800 px-3 py-1 rounded"
-          onClick={() => {
-            onChange(suggestion);
-          }}
-        >
-          {suggestion}
-        </button>
-      )}
-      <input
-        className="w-full p-2 border-2 border-gray-700 rounded shadow-xl bg-gray-800"
-        value={input}
-        placeholder="Say something..."
-        onChange={(e) => onChange(e.target.value)}
-        autoFocus
-      />
-    </div>
-  </form>
+    <form
+        onSubmit={onSubmit}
+        className="fixed bottom-0 mb-8 max-w-md w-full"
+    >
+        <div className="flex flex-col gap-2 items-start">
+            {suggestion && (
+                <button
+                    type="button"
+                    className="text-xs text-gray-400 text-left bg-gray-800 px-3 py-1 rounded"
+                    onClick={() => {
+                        onChange(suggestion);
+                    }}
+                >
+                    {suggestion}
+                </button>
+            )}
+            <input
+                className="w-full p-2 border-2 border-gray-700 rounded shadow-xl bg-gray-800"
+                value={input}
+                placeholder="Say something..."
+                onChange={(e) => onChange(e.target.value)}
+                autoFocus
+            />
+        </div>
+    </form>
 );
