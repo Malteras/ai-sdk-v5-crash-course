@@ -6,36 +6,35 @@ import './tailwind.css';
 import type { MyUIMessage } from '../api/chat.ts';
 
 const App = () => {
-  const { messages, sendMessage } = useChat<MyUIMessage>({});
+    const { messages, sendMessage } = useChat<MyUIMessage>({});
 
-  const [input, setInput] = useState(
-    `Give me the opening paragraph of a book about a detective cat.`,
-  );
+    const [input, setInput] = useState(
+        `Give me the opening paragraph of a book about a detective cat.`,
+    );
 
-  return (
-    <Wrapper>
-      {messages.map((message) => (
-        <Message
-          key={message.id}
-          role={message.role}
-          parts={message.parts}
-          // TODO: Pass the metadata to the Message component
-          metadata={TODO}
-        />
-      ))}
-      <ChatInput
-        input={input}
-        onChange={(e) => setInput(e.target.value)}
-        onSubmit={(e) => {
-          e.preventDefault();
-          sendMessage({
-            text: input,
-          });
-          setInput('');
-        }}
-      />
-    </Wrapper>
-  );
+    return (
+        <Wrapper>
+            {messages.map((message) => (
+                <Message
+                    key={message.id}
+                    role={message.role}
+                    parts={message.parts}
+                    metadata={message.metadata}
+                />
+            ))}
+            <ChatInput
+                input={input}
+                onChange={(e) => setInput(e.target.value)}
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    sendMessage({
+                        text: input,
+                    });
+                    setInput('');
+                }}
+            />
+        </Wrapper>
+    );
 };
 
 const root = createRoot(document.getElementById('root')!);
