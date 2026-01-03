@@ -9,6 +9,7 @@ export const POST = async (req: Request): Promise<Response> => {
     // https://ai-sdk.dev/docs/reference/ai-sdk-errors
     const stream = createUIMessageStream({
         execute: async ({ writer }) => {
+            // TODO:@Ognjen - chech this error handling example
             throw new RetryError({
                 errors: [new Error('An error occurred')],
                 message: 'Maximum retries exceeded',
