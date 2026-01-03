@@ -1,34 +1,30 @@
 import {
-  createUIMessageStream,
-  createUIMessageStreamResponse,
-  RetryError,
+    createUIMessageStream,
+    createUIMessageStreamResponse,
+    RetryError,
 } from 'ai';
 
 export const POST = async (req: Request): Promise<Response> => {
-  // All the AI SDK errors are available here:
-  // https://ai-sdk.dev/docs/reference/ai-sdk-errors
-  const stream = createUIMessageStream({
-    execute: async ({ writer }) => {
-      throw new RetryError({
-        errors: [new Error('An error occurred')],
-        message: 'Maximum retries exceeded',
-        reason: 'maxRetriesExceeded',
-      });
-    },
-    onError(error) {
-      // TODO: Check if the error is a RetryError using:
-      // RetryError.isInstance(error)
-      if (TODO) {
-        // TODO: If it is, return a message that tells the user to try again
-        return TODO;
-      }
+    // All the AI SDK errors are available here:
+    // https://ai-sdk.dev/docs/reference/ai-sdk-errors
+    const stream = createUIMessageStream({
+        execute: async ({ writer }) => {
+            throw new RetryError({
+                errors: [new Error('An error occurred')],
+                message: 'Maximum retries exceeded',
+                reason: 'maxRetriesExceeded',
+            });
+        },
+        onError(error) {
+            if (RetryError.isInstance(error)) {
+                return 'Please try again later.';
+            }
 
-      // TODO: Return a default message if the error is not a RetryError
-      return TODO;
-    },
-  });
+            return 'An error occurred.';
+        },
+    });
 
-  return createUIMessageStreamResponse({
-    stream,
-  });
+    return createUIMessageStreamResponse({
+        stream,
+    });
 };
