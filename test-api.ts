@@ -186,13 +186,13 @@ Remember to output valid JSON array matching the schema.`;
 }
 
 const word = 'Paris'; // Change this to any word you want
-generateQuizQuestions(word)
-    .then((questions) => {
-        if (questions) {
-            console.log('\n📋 Full JSON Output:\n');
-            console.log(JSON.stringify(questions, null, 2));
-        }
-    })
-    .catch((error) => {
-        console.error('Fatal error:', error);
-    });
+// generateQuizQuestions(word)
+//     .then((questions) => {
+//         if (questions) {
+//             console.log('\n📋 Full JSON Output:\n');
+//             console.log(JSON.stringify(questions, null, 2));
+//         }
+//     })
+//     .catch((error) => {
+//         console.error('Fatal error:', error);
+//     });
