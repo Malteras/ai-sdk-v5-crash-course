@@ -1,12 +1,13 @@
 import { useChat } from '@ai-sdk/react';
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import type { MyMessage } from '../api/chat.ts';
 import { ChatInput, Message, Wrapper } from './components.tsx';
 import './tailwind.css';
 
 const App = () => {
-  // TODO: pass MyMessage to the useChat hook: useChat<MyMessage>({})
-  const { messages, sendMessage } = useChat({});
+  // useChat<MyMessage> makes messages typed correctly with our custom data parts
+  const { messages, sendMessage } = useChat<MyMessage>({});
 
   const [input, setInput] = useState(
     `Write a Slack message to your boss complaining about a colleague's hygiene.`,

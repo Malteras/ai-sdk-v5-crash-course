@@ -1,34 +1,39 @@
 import { google } from '@ai-sdk/google';
 import {
-  createUIMessageStream,
-  createUIMessageStreamResponse,
-  generateText,
-  streamText,
-  type UIMessage,
+    createUIMessageStream,
+    createUIMessageStreamResponse,
+    streamText,
+    type UIMessage,
 } from 'ai';
 
-// TODO: replace all instances of UIMessage with MyMessage
+// TODO: @Ognjen - QUIZOMNIA this is how to show custom parts - useful for my quiz to see first version of questions,
+// evaluation, and final version
 export type MyMessage = UIMessage<
-  unknown,
-  {
-    // TODO: declare custom data parts here
-  }
+    unknown,
+    {
+        'first-draft': {
+            data: string;
+        };
+        evaluation: {
+            data: string;
+        };
+    }
 >;
 
-const formatMessageHistory = (messages: UIMessage[]) => {
-  return messages
-    .map((message) => {
-      return `${message.role}: ${message.parts
-        .map((part) => {
-          if (part.type === 'text') {
-            return part.text;
-          }
+const formatMessageHistory = (messages: MyMessage[]) => {
+    return messages
+        .map((message) => {
+            return `${message.role}: ${message.parts
+                .map((part) => {
+                    if (part.type === 'text') {
+                        return part.text;
+                    }
 
-          return '';
+                    return '';
+                })
+                .join('')}`;
         })
-        .join('')}`;
-    })
-    .join('\n');
+        .join('\n');
 };
 
 const WRITE_SLACK_MESSAGE_FIRST_DRAFT_SYSTEM = `You are writing a Slack message for a user based on the conversation history. Only return the Slack message, no other text.`;
@@ -44,60 +49,121 @@ const WRITE_SLACK_MESSAGE_FINAL_SYSTEM = `You are writing a Slack message based 
 `;
 
 export const POST = async (req: Request): Promise<Response> => {
-  // TODO: change to MyMessage[]
-  const body: { messages: UIMessage[] } = await req.json();
-  const { messages } = body;
+    const body: { messages: MyMessage[] } = await req.json();
+    const { messages } = body;
 
-  const stream = createUIMessageStream<MyMessage>({
-    execute: async ({ writer }) => {
-      // TODO: write a { type: 'start' } message via writer.write
-      TODO;
+    const stream = createUIMessageStream<MyMessage>({
+        execute: async ({ writer }) => {
+            // TODO: @Ognjen - QUIZOMNIA - evaluation read this comment
+            // When streaming multiple things (first draft → evaluation → final),
+            // each streamText tries to send its own start and finish messages.
+            // This causes duplicate messages in the UI.
+            // By manually sending start at the beginning, we control the message lifecycle:
+            // Manual start → custom parts → merge final (without its start) → auto finish
+            writer.write({ type: 'start' });
 
-      // TODO - change to streamText and write to the stream as custom data parts
-      const writeSlackResult = await generateText({
-        model: google('gemini-2.0-flash-001'),
-        system: WRITE_SLACK_MESSAGE_FIRST_DRAFT_SYSTEM,
-        prompt: `
-          Conversation history:
-          ${formatMessageHistory(messages)}
-        `,
-      });
+            // Step 1: Stream first draft and write as custom data part
+            //
+            // Problem with generateText:
+            // - Blocks until the entire response is complete
+            // - User sees nothing during this time
+            // - Returns { text: string } after completion
+            //
+            // Solution with streamText:
+            // - Returns immediately with a StreamTextResult
+            // - Has .textStream property (async iterable of chunks)
+            // - We accumulate chunks and write them as custom data parts
+            //
+            // Key concept - ID reconciliation:
+            // We use a stable id so that each write UPDATES the same part instead of creating new ones:
+            // Write 1: { type: 'data-first-draft', id: 'abc', data: 'H' }
+            // Write 2: { type: 'data-first-draft', id: 'abc', data: 'He' }      ← replaces
+            // Write 3: { type: 'data-first-draft', id: 'abc', data: 'Hel' }     ← replaces
+            // Write 4: { type: 'data-first-draft', id: 'abc', data: 'Hell' }    ← replaces
+            // Write 5: { type: 'data-first-draft', id: 'abc', data: 'Hello' }   ← replaces
+            const firstDraftId = crypto.randomUUID();
+            let firstDraftText = '';
 
-      // TODO - change to streamText and write to the stream as custom data parts
-      const evaluateSlackResult = await generateText({
-        model: google('gemini-2.0-flash-001'),
-        system: EVALUATE_SLACK_MESSAGE_SYSTEM,
-        prompt: `
+            const writeSlackStream = streamText({
+                model: google('gemini-2.0-flash-001'),
+                system: WRITE_SLACK_MESSAGE_FIRST_DRAFT_SYSTEM,
+                prompt: `
+                        Conversation history:
+                        ${formatMessageHistory(messages)}
+                    `,
+            });
+
+            for await (const chunk of writeSlackStream.textStream) {
+                firstDraftText += chunk;
+                writer.write({
+                    type: 'data-first-draft',
+                    id: firstDraftId,
+                    data: { data: firstDraftText },
+                });
+            }
+            // After loop: firstDraftText contains the complete draft
+
+            // Step 2: Stream evaluation and write as custom data part
+            const evaluationId = crypto.randomUUID();
+            let evaluationText = '';
+
+            const evaluateSlackStream = streamText({
+                model: google('gemini-2.0-flash-001'),
+                system: EVALUATE_SLACK_MESSAGE_SYSTEM,
+                prompt: `
           Conversation history:
           ${formatMessageHistory(messages)}
 
           Slack message:
-          ${writeSlackResult.text}
+          ${firstDraftText}
         `,
-      });
+            });
 
-      const finalSlackAttempt = streamText({
-        model: google('gemini-2.0-flash-001'),
-        system: WRITE_SLACK_MESSAGE_FINAL_SYSTEM,
-        prompt: `
+            for await (const chunk of evaluateSlackStream.textStream) {
+                evaluationText += chunk;
+                writer.write({
+                    type: 'data-evaluation',
+                    id: evaluationId,
+                    data: { data: evaluationText },
+                });
+            }
+            // After loop: evaluationText contains the complete evaluation
+
+            const finalSlackAttempt = streamText({
+                model: google('gemini-2.0-flash-001'),
+                system: WRITE_SLACK_MESSAGE_FINAL_SYSTEM,
+                prompt: `
           Conversation history:
           ${formatMessageHistory(messages)}
 
           First draft:
-          ${writeSlackResult.text}
+          ${firstDraftText}
 
           Previous feedback:
-          ${evaluateSlackResult.text}
+          ${evaluationText}
         `,
-      });
+            });
 
-      // TODO: merge the final slack attempt into the stream,
-      // sending sendStart: false
-      writer.TODO;
-    },
-  });
+            // Step 3: Merge final message stream (sends as regular text parts)
+            //
+            // How it works:
+            // - Convert streamText result to UIMessageStream using .toUIMessageStream()
+            // - Merge it into our writer
+            // - Pass sendStart: false because we already sent start manually at the beginning
+            //
+            // Why sendStart: false?
+            // - We already wrote { type: 'start' } at the beginning
+            // - If we let this stream send another start, we'd get duplicate messages in the UI
+            // - The final stream CAN send finish (default) because it's the last thing
+            writer.merge(
+                finalSlackAttempt.toUIMessageStream({
+                    sendStart: false,
+                }),
+            );
+        },
+    });
 
-  return createUIMessageStreamResponse({
-    stream,
-  });
+    return createUIMessageStreamResponse({
+        stream,
+    });
 };
