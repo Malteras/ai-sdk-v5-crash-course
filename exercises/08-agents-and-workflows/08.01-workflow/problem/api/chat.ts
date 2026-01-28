@@ -29,23 +29,33 @@ const WRITE_SLACK_MESSAGE_FINAL_SYSTEM = `You are writing a Slack message based 
 
   Return only the final Slack message, no other text.
 `;
-
+// TODO:@Ognjen - check this workflow example it's great pattern for quizzes
 export const POST = async (req: Request): Promise<Response> => {
     const body: { messages: UIMessage[] } = await req.json();
+    // messages = chat history from UI, e.g. [{role: "user", parts: [{type: "text", text: "..."}]}]
     const { messages } = body;
-    // TODO:@Ognjen - check this workflow example it's great pattern for quizzes
+
+    // Generator-Evaluator Workflow (3-step LLM pipeline):
+    // 1. Generate first draft from conversation history
+    // 2. Evaluate the draft for clarity and professionalism
+    // 3. Produce final polished message using original context + draft + feedback
+    // User only sees step 3 streamed to the UI
+
+    // Step 1: Generate initial Slack message draft
     const writeSlackResult = await generateText({
         model: google('gemini-2.0-flash'),
         system: WRITE_SLACK_MESSAGE_FIRST_DRAFT_SYSTEM,
         prompt: formatMessageHistory(messages),
     });
 
+    // Step 2: Evaluate the draft for quality and professionalism
     const evaluateSlackResult = await generateText({
         model: google('gemini-2.0-flash'),
         system: EVALUATE_SLACK_MESSAGE_SYSTEM,
         prompt: writeSlackResult.text,
     });
 
+    // Step 3: Generate final message with all context (streamed to user)
     const finalSlackAttempt = streamText({
         model: google('gemini-2.0-flash'),
         system: WRITE_SLACK_MESSAGE_FINAL_SYSTEM,
