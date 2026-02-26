@@ -24,7 +24,10 @@ export const POST = async (req: Request): Promise<Response> => {
             // TODO: Use generateText to call a model, passing in the modelMessages
             // and the GUARDRAIL_SYSTEM prompt.
             //
-
+            // TODO: Quizomnia Keep guardrails as a separate model call:
+            // - Avoids spending an expensive main model on trash requests.
+            // - Lets you update guardrails without changing core behavior.
+            // - Keeps the system modular and more predictable.
             let guardrailResult = await generateText({
                 model: google('gemini-2.0-flash'),
                 messages: [
@@ -35,7 +38,22 @@ export const POST = async (req: Request): Promise<Response> => {
                     ...modelMessages,
                 ],
             });
+            // Pull raw text from the step content array (same text as the getter).
+            const guardrailRawText =
+                guardrailResult.steps?.[0]?.content
+                    ?.filter((part) => part.type === 'text')
+                    ?.map((part) => part.text)
+                    ?.join('')
+                    .trim() ?? '';
 
+            console.log(
+                'Guardrail raw (getter):',
+                JSON.stringify(guardrailResult.text),
+            );
+            console.log(
+                'Guardrail raw (steps):',
+                JSON.stringify(guardrailRawText),
+            );
             console.timeEnd('Guardrail Time');
 
             console.log(
