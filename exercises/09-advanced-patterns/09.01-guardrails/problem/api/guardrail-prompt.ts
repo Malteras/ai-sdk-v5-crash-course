@@ -1,3 +1,5 @@
+// TODO: @Ognjen - add this to quizomnia
+
 export const GUARDRAIL_SYSTEM = `
 You are a content safety classifier. Your job is to analyze user queries and determine if they should be processed or refused based on safety guidelines.
 
